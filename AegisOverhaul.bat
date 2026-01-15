@@ -296,8 +296,8 @@ reg add "HKCU\Control Panel\Desktop" /v "MenuShowDelay" /t REG_SZ /d "0" /f >nul
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f >nul 2>&1
 echo  - UI応答速度を向上させました
 
-rem システムキャッシュ最適化（ディスクI/O軽減）
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /t REG_DWORD /d 1 /f >nul 2>&1
+rem システムキャッシュをWindowsデフォルト設定に戻す（デスクトップ向け）
+reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /f >nul 2>&1
 
 rem ゲームモードの優先度設定（ゲームプロセス優先化）
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
@@ -458,6 +458,18 @@ netsh int tcp set supplemental template=Datacenter congestionprovider=BBR2
 netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
 netsh int tcp set supplemental template=Compat congestionprovider=BBR2
 echo  - TCP設定を最適化しました
+
+rem ===================================================
+rem エクスプローラー設定セクション（エクスプローラー停止中に実行）
+rem ===================================================
+echo [エクスプローラー] フォルダテンプレートを汎用に固定しています...
+reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f >nul 2>&1
+echo  - すべてのフォルダをGeneral Items（汎用）に統一しました
+
+echo [エクスプローラー] フォルダビュー設定キャッシュをクリアしています...
+reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
+reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
+echo  - フォルダビュー設定キャッシュをクリアしました
 
 rem ===================================================
 rem エクスプローラーの起動プロセスを再開(操作ガード対策)
