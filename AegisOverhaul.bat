@@ -120,7 +120,6 @@ rmdir /s /q "%USERPROFILE%\.monica-code" 2>nul
 rmdir /s /q "%USERPROFILE%\.nuget" 2>nul
 rmdir /s /q "%USERPROFILE%\.omnisharp" 2>nul
 rmdir /s /q "%USERPROFILE%\.templateengine" 2>nul
-rmdir /s /q "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" 2>nul
 rmdir /s /q "%USERPROFILE%\Bootstrap Studio Backups" 2>nul
 rmdir /s /q "%USERPROFILE%\intellij-chatgpt" 2>nul
 rmdir /s /q "C:\$SysReset" 2>nul
@@ -280,9 +279,72 @@ rem Windows Defender の定義ファイル更新を実行
 echo  - Windows Defender の定義ファイルを更新しました
 
 rem ===================================================
-rem システム最適化セクション
+rem システムメンテナンスセクション
 rem ===================================================
-echo [システム最適化] 各種システム設定を最適化しています...
+echo [ディスククリーンアップ] システムトレイアイコンをリセットしています...
+reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\TrayNotify" /v IconStreams /f >nul 2>&1
+reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\TrayNotify" /v PastIconsStream /f >nul 2>&1
+timeout /t 1 /nobreak >nul
+echo  - システムトレイアイコンをリセットしました
+
+echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
+Dism.exe /online /Cleanup-Image /StartComponentCleanup /StartComponentCleanup:ResetBase >nul 2>&1
+echo  - Windows Updateキャッシュを削除しました
+
+echo [システム最適化] UI応答速度を向上させています...
+reg add "HKCU\Control Panel\Desktop" /v "MenuShowDelay" /t REG_SZ /d "0" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f >nul 2>&1
+echo  - UI応答速度を向上させました
+
+rem システムキャッシュ最適化（ディスクI/O軽減）
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /t REG_DWORD /d 1 /f >nul 2>&1
+
+rem ゲームモードの優先度設定（ゲームプロセス優先化）
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f >nul 2>&1
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f >nul 2>&1
+
+rem 電力スロットリング無効化（バックグラウンド処理の遅延防止）
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
+
+rem ===================================================
+rem MMAgent設定（SysMainが必要）
+rem ===================================================
+echo [システム最適化] MMAgentを設定しています...
+rem SysMainサービスが稼働していることを確認
+sc query SysMain | find "RUNNING" >nul
+if %errorlevel% neq 0 (
+    echo  - SysMainサービスを開始しています...
+    net start SysMain 2>nul
+    timeout /t 3 /nobreak >nul
+)
+powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue } catch {}"
+powershell -NoProfile -Command "try { Enable-MMAgent -PageCombining -ErrorAction SilentlyContinue } catch {}"
+powershell -NoProfile -Command "try { Set-MMAgent -MaxOperationAPIFiles 128 -ErrorAction SilentlyContinue } catch {}"
+powershell -NoProfile -Command "if (-not (Get-MMAgent).ApplicationLaunchPrefetching) { Enable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "if (-not (Get-MMAgent).OperationAPI) { Enable-MMAgent -OperationAPI -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
+echo  - MMAgentの設定を完了しました
+
+rem ===================================================
+rem オーディオ最適化セクション（安全性重視版）
+rem ===================================================
+echo [オーディオ最適化] 音声途切れ対策を実施しています...
+rem USB 選択的サスペンド無効化（Microsoft公式推奨・安全）
+powershell -Command "Get-ChildItem -Path 'HKLM:\SYSTEM\CurrentControlSet\Enum\USB' -Recurse -ErrorAction SilentlyContinue | ForEach-Object { try { Set-ItemProperty -Path $_.PSPath -Name 'SelectiveSuspendOn' -Value 0 -ErrorAction SilentlyContinue } catch {} }"
+rem マルチメディアタスク優先度を上げる（最も安全）
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Playback" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Capture" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
+rem マルチメディア常時高優先度（マイナス影響無し）
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "AlwaysHighPriority" /t REG_DWORD /d 1 /f >nul 2>&1
+rem MMCSS（マルチメディアクラススケジューラ）サービス確認
+net start MMCSS >nul 2>&1
+echo  - オーディオ優先度最適化を完了しました
+
+rem NVIDIA GPU の MSI MessageNumberLimit を削除（CPU0集中対策）
+echo [システム最適化] NVIDIA GPU の割り込み分散設定を最適化しています...
+powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_PnPEntity | Where-Object { $_.Name -like '*NVIDIA*' -and $_.DeviceID -like '*VEN_10DE*' } | ForEach-Object { $path = \"HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.DeviceID)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties\"; if (Test-Path $path) { Remove-ItemProperty -Path $path -Name 'MessageNumberLimit' -ErrorAction SilentlyContinue } }"
+echo  - NVIDIA GPU の割り込み分散設定を最適化しました（再起動後に有効になります）
 
 rem ダウンロードフォルダなどが英語になっているのを修復する
 regsvr32 shell32.dll /i:U /s
@@ -299,45 +361,6 @@ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "StartupDelayInMSec" /t REG_DWORD /d 0 /f
 echo  - スタートアップフォルダのアプリの起動速度を向上しました
 
-rem ===================================================
-rem MMAgent設定（SysMainが必要）
-rem ===================================================
-echo [システム最適化] MMAgentを設定しています...
-rem SysMainサービスが稼働していることを確認
-sc query SysMain | find "RUNNING" >nul
-if %errorlevel% neq 0 (
-    echo  - SysMainサービスを開始しています...
-    net start SysMain 2>nul
-    timeout /t 3 /nobreak >nul
-)
-powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression } catch {}"
-powershell -NoProfile -Command "try { Enable-MMAgent -PageCombining } catch {}"
-powershell -NoProfile -Command "try { Set-MMAgent -MaxOperationAPIFiles 64 } catch {}"
-powershell -NoProfile -Command "try { Enable-MMAgent -ApplicationLaunchPrefetching } catch {}"
-powershell -NoProfile -Command "try { Enable-MMAgent -OperationAPI } catch {}"
-powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch } catch {}"
-echo  - MMAgentの設定を完了しました
-
-rem Superfetch設定は現在はSysMainによって管理されているため設定を削除
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableSuperfetch" /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /f >nul 2>&1
-echo  - Superfetch および Prefetcher の設定を削除しました
-
-rem === oldで設定されたストレージ最適化をWindows標準にリセット ===
-echo [システム最適化] ストレージ関連の過度な最適化をリセットしています...
-
-rem SSD TRIM関連設定をリセット
-powershell -Command "fsutil behavior set disabledeletenotify 1" >nul 2>&1
-echo  - SSD TRIM関連設定をリセットしました
-
-rem ストレージ設定をリセット
-powershell -Command "try { Set-StorageSetting -NewDiskPolicy Default -ErrorAction SilentlyContinue } catch {}" >nul 2>&1
-echo  - ストレージ設定をWindows標準にリセットしました
-
-rem NTFSメモリ使用量設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v NtfsMemoryUsage /f >nul 2>&1
-echo  - NTFSメモリ使用量をWindows標準にリセットしました
-
 rem MPO（マルチプレーンオーバーレイ）を無効化（表示のちらつき対策・安定性向上）
 reg add "HKLM\SOFTWARE\Microsoft\Windows\Dwm" /v OverlayTestMode /t REG_DWORD /d 5 /f
 echo  - MPO（マルチプレーンオーバーレイ）を無効化しました
@@ -346,107 +369,31 @@ rem リモートデスクトップのFPSを60FPSに設定
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations" /v DWMFRAMEINTERVAL /t REG_DWORD /d 15 /f
 echo  - リモートデスクトップのFPSを60FPSに設定しました
 
-rem === oldで設定された過度な最適化設定をWindows標準にリセット ===
-echo [システム最適化] 過度な最適化設定をWindows標準にリセットしています...
-
-rem シェルバッグ設定をリセット
-reg delete "HKCU\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
-
-rem Explorerフォルダーオプション設定をリセット
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "LaunchTo" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "HideFileExt" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Hidden" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowSyncProviderNotifications" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /f >nul 2>&1
-
-rem ビジュアルエフェクト設定をリセット
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v "VisualFXSetting" /f >nul 2>&1
-
-rem エクスプローラー表示速度設定をリセット
-reg delete "HKCU\Control Panel\Desktop\WindowMetrics" /v "MinAnimate" /f >nul 2>&1
-reg delete "HKCU\Control Panel\Desktop" /v "MenuShowDelay" /f >nul 2>&1
-
-rem メモリ関連のレジストリ設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v SessionViewSize /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v DisablePagingExecutive /f >nul 2>&1
-
-rem デスクトップヒープサイズ設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SubSystems" /v SharedSection /f >nul 2>&1
-
-rem Segment Heap設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Segment Heap" /f >nul 2>&1
-
-rem バックグラウンドアプリ実行設定をリセット
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" /v GlobalUserDisabled /f >nul 2>&1
-
-rem Fast Startup設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v HiberbootEnabled /f >nul 2>&1
-
-rem Windows 11 Copilot関連設定をリセット
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v SoftLandingEnabled /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v SubscribedContent-338388Enabled /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarDa" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarMn" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowCopilotButton" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Search" /v "SearchboxTaskbarMode" /f >nul 2>&1
-reg delete "HKCU\Software\Policies\Microsoft\Windows\WindowsCopilot" /v "TurnOffWindowsCopilot" /f >nul 2>&1
-reg delete "HKCU\SOFTWARE\Policies\Microsoft\Dsh" /v "AllowNewsAndInterests" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Policies\Microsoft\Dsh" /v "AllowNewsAndInterests" /f >nul 2>&1
-reg delete "HKLM\Software\Policies\Microsoft\Windows\WindowsCopilot" /v "TurnOffWindowsCopilot" /f >nul 2>&1
-
-rem プリフェッチファイル数設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v MaxPrefetchFiles /f >nul 2>&1
-
-rem SystemCacheLimit設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v SystemCacheLimit /f >nul 2>&1
-
-rem PoolUsageMaximum設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v PoolUsageMaximum /f >nul 2>&1
-
-rem Direct Storage設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v "HwSchMode" /f >nul 2>&1
-
-rem NVMe最適化をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device" /v "ForcedPhysicalSectorSizeInBytes" /f >nul 2>&1
-
-rem GPU設定をリセット
-reg delete "HKCU\Software\Microsoft\GameBar" /v "AllowAutoGameMode" /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\GameBar" /v "AutoGameModeEnabled" /f >nul 2>&1
-
-rem ゲーム優先度設定をリセット
-reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /f >nul 2>&1
-
-rem Game Mode詳細設定をリセット
-reg delete "HKCU\Software\Microsoft\GameBar" /v "UseNexusForGameBarEnabled" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Clock Rate" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "SFIO Priority" /f >nul 2>&1
-
-rem Xbox Game Bar設定をリセット
-reg delete "HKCU\System\GameConfigStore" /v GameDVR_Enabled /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR" /v AppCaptureEnabled /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AllowGameDVR /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\GameBar" /v ShowStartupPanel /f >nul 2>&1
-reg delete "HKCU\Software\Microsoft\GameBar" /v Enabled /f >nul 2>&1
-
-rem 電力スロットリング設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /f >nul 2>&1
-
-rem タイマー解像度設定をリセット
-bcdedit /set useplatformtick no >nul 2>&1
-bcdedit /deletevalue disabledynamictick >nul 2>&1
-bcdedit /deletevalue tscsyncpolicy >nul 2>&1
-
 rem 電源プランを初期化
 powercfg /restoredefaultschemes >nul 2>&1
 powercfg /setactive SCHEME_BALANCED >nul 2>&1
-echo  - 電源プランをWindows標準にリセットしました
 
-echo  - 過度な最適化設定をWindows標準にリセットしました
+rem ディスプレイ消灯時間を設定
+powercfg /change monitor-timeout-ac 360
+powercfg /change monitor-timeout-dc 30
+
+rem スタンバイ時間を設定
+powercfg /change standby-timeout-ac 0
+powercfg /change standby-timeout-dc 60
+
+rem 電源ボタンとカバーの動作設定
+rem 電源接続時：電源ボタンでシャットダウン (0:何もしない, 1:スリープ, 2:休止, 3:シャットダウン)
+powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+rem 電源接続時：カバーを閉じても何もしない
+powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+rem バッテリー駆動時：電源ボタンでシャットダウン
+powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+rem バッテリー駆動時：カバーを閉じるとスリープ
+powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+rem 設定を適用
+powercfg /setactive SCHEME_CURRENT
+
+echo  - 電源プランをWindows標準にリセットしました
 
 rem 休止状態をオフにする
 powercfg /hibernate off
@@ -485,6 +432,7 @@ netsh int tcp reset
 netsh int tcp set global default
 netsh int ip reset
 route /f
+arp -d *
 
 rem IPアドレス操作
 nbtstat -R
@@ -502,62 +450,14 @@ netsh int tcp set global timestamps=disabled
 netsh int tcp set global rss=enabled
 netsh int tcp set global fastopen=enabled
 netsh int tcp set global autotuninglevel=normal
+netsh int ipv6 set global loopbacklargemtu=disable
+netsh int ipv4 set global loopbacklargemtu=disable
 netsh int tcp set supplemental template=Internet congestionprovider=BBR2
 netsh int tcp set supplemental template=InternetCustom congestionprovider=BBR2
 netsh int tcp set supplemental template=Datacenter congestionprovider=BBR2
 netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
 netsh int tcp set supplemental template=Compat congestionprovider=BBR2
-netsh int ipv6 set global loopbacklargemtu=disable
-netsh int ipv4 set global loopbacklargemtu=disable
 echo  - TCP設定を最適化しました
-
-rem ネットワークアダプターのLSO最適化
-powershell -Command "Get-NetAdapter | Where-Object {$_.Status -eq 'Up'} | ForEach-Object { try { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Large Send Offload (IPv4)' -DisplayValue 'Disabled' -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Large Send Offload (IPv6)' -DisplayValue 'Disabled' -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Large Send Offload Version 2 (IPv4)' -DisplayValue 'Enabled' -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Large Send Offload Version 2 (IPv6)' -DisplayValue 'Enabled' -ErrorAction SilentlyContinue } catch {} }"
-echo  - ネットワークアダプターのLSO v2を有効化しました
-
-rem ネットワークアダプターの電源管理無効化
-powershell -Command "Get-NetAdapter | Where-Object {$_.Status -eq 'Up'} | ForEach-Object { try { Disable-NetAdapterPowerManagement -Name $_.Name -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Energy Efficient Ethernet' -DisplayValue 'Disabled' -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Green Ethernet' -DisplayValue 'Disabled' -ErrorAction SilentlyContinue; Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName 'Power Saving Mode' -DisplayValue 'Disabled' -ErrorAction SilentlyContinue } catch {} }"
-echo  - ネットワークアダプターの電源管理を無効化しました
-
-rem === oldで設定された過度なネットワーク設定をWindows標準にリセット ===
-echo [ネットワーク最適化] 過度なネットワーク設定をWindows標準にリセットしています...
-
-rem AFD未公開パラメータをリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\AFD\Parameters" /v DefaultReceiveWindow /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\AFD\Parameters" /v DefaultSendWindow /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\AFD\Parameters" /v MaxFastDgramRecv /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\AFD\Parameters" /v MaxFastReceive /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\AFD\Parameters" /v MaxFastTransmit /f >nul 2>&1
-
-rem TCP詳細設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableDeadGWDetect /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableICMPRedirect /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnablePMTUBHDetect /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableTCPChimney /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableWsd /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v TcpCongestionControl /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v GlobalMaxTcpWindowSize /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v TcpWindowSize /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v TcpInitialRtt /f >nul 2>&1
-
-rem Dns設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters" /v MaxCacheTtl /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters" /v MaxNegativeCacheTtl /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters" /v MaxSOACacheTtl /f >nul 2>&1
-
-rem HTTP設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" /v EnableNonUTF8 /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" /v EnableUrlRewrite /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" /v MaxConnections /f >nul 2>&1
-
-rem LanmanServer設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v SizReqBuf /f >nul 2>&1
-
-rem IPv6設定をリセット
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" /v DisableIPAutoConfigurationLimits /f >nul 2>&1
-reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" /v MaxUserPort /f >nul 2>&1
-
-echo  - 過度なネットワーク設定をWindows標準にリセットしました
 
 rem ===================================================
 rem エクスプローラーの起動プロセスを再開(操作ガード対策)
