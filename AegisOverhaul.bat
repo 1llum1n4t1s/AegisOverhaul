@@ -204,9 +204,10 @@ for /d %%b in (
         if exist "%%~p\Code Cache" (
             call :CleanDirectory "%%~p\Code Cache"
         )
-        if exist "%%~p\Service Worker" (
-            call :CleanDirectory "%%~p\Service Worker"
-        )
+    rem Clear Service Workers
+    if exist "%%~p\Service Worker" (
+        call :CleanDirectory "%%~p\Service Worker"
+    )
         if exist "%%~p\File System" (
             call :CleanDirectory "%%~p\File System"
         )
@@ -219,6 +220,7 @@ for /d %%b in (
         if exist "%%~p\JumpListIconsTopSites" (
             call :CleanDirectory "%%~p\JumpListIconsTopSites"
         )
+        rem Clear IndexedDB
         if exist "%%~p\IndexedDB" (
             call :CleanDirectory "%%~p\IndexedDB"
         )
@@ -458,6 +460,11 @@ netsh int tcp set supplemental template=Datacenter congestionprovider=BBR2
 netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
 netsh int tcp set supplemental template=Compat congestionprovider=BBR2
 echo  - TCP設定を最適化しました
+
+echo [ネットワーク最適化] 日本国内向けのDNS応答を安定化しています...
+powershell -NoProfile -Command "Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('1.1.1.1','1.0.0.1') -AddressFamily IPv4 -ErrorAction SilentlyContinue } catch {} }"
+powershell -NoProfile -Command "Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('2606:4700:4700::1111','2606:4700:4700::1001') -AddressFamily IPv6 -ErrorAction SilentlyContinue } catch {} }"
+echo  - DNSサーバーを国内でも応答性が高いAnycast構成に設定しました
 
 rem ===================================================
 rem エクスプローラー設定セクション（エクスプローラー停止中に実行）
