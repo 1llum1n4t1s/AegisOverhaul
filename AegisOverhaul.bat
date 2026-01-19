@@ -467,14 +467,6 @@ netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
 netsh int tcp set supplemental template=Compat congestionprovider=BBR2
 echo  - TCP設定を最適化しました
 
-echo [ネットワーク最適化] 日本国内向けのDNS応答を安定化しています...
-powershell -NoProfile -Command ^
-    "Get-NetAdapter -Physical | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { " ^
-    "    try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('8.8.8.8','8.8.4.4') -AddressFamily IPv4 -ErrorAction Stop } catch {} " ^
-    "    try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('2001:4860:4860::8888','2001:4860:4860::8844') -AddressFamily IPv6 -ErrorAction Stop } catch {} " ^
-    "}"
-echo  - DNSサーバーを国内でも応答性が高いAnycast構成に設定しました
-
 rem ===================================================
 rem エクスプローラー設定セクション（エクスプローラー停止中に実行）
 rem ===================================================
