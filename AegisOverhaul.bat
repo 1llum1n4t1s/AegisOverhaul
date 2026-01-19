@@ -133,11 +133,11 @@ rmdir /s /q "C:\Windows.old" 2>nul
 rem 特定のファイル削除
 echo [ファイルクリーンアップ] キャッシュファイルを削除しています...
 del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" 2>nul
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" 2>nul
 del /q /f "%LOCALAPPDATA%\IconCache.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
 del /q /f "%WinDir%\System32\FNTCACHE.DAT" 2>nul
+del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" 2>nul
 
 
 rem echo [ファイルクリーンアップ] 不要なIDE・開発環境フォルダを削除しています...
@@ -221,7 +221,6 @@ for /d %%b in (
         if exist "%%~p\JumpListIconsTopSites" (
             call :CleanDirectory "%%~p\JumpListIconsTopSites"
         )
-        rem Clear IndexedDB
         if exist "%%~p\IndexedDB" (
             call :CleanDirectory "%%~p\IndexedDB"
         )
