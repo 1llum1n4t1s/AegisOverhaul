@@ -309,6 +309,10 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProf
 rem 電力スロットリング無効化（バックグラウンド処理の遅延防止）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
 
+rem 予測読み込み（Prefetch/Superfetch）をレジストリで無効化
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableSuperfetch" /t REG_DWORD /d 0 /f >nul 2>&1
+
 rem ===================================================
 rem MMAgent設定（SysMainが必要）
 rem ===================================================
@@ -322,9 +326,8 @@ if %errorlevel% neq 0 (
 )
 powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue } catch {}"
 powershell -NoProfile -Command "try { Enable-MMAgent -PageCombining -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Set-MMAgent -MaxOperationAPIFiles 128 -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "if (-not (Get-MMAgent).ApplicationLaunchPrefetching) { Enable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue }"
-powershell -NoProfile -Command "if (-not (Get-MMAgent).OperationAPI) { Enable-MMAgent -OperationAPI -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "try { Disable-MMAgent -OperationAPI -ErrorAction SilentlyContinue } catch {}"
+powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue } catch {}"
 powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
 echo  - MMAgentの設定を完了しました
 
