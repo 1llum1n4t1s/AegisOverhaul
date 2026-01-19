@@ -290,13 +290,8 @@ timeout /t 1 /nobreak >nul
 echo  - システムトレイアイコンをリセットしました
 
 echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
-Dism.exe /online /Cleanup-Image /StartComponentCleanup /StartComponentCleanup:ResetBase >nul 2>&1
+Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
 echo  - Windows Updateキャッシュを削除しました
-
-echo [システム最適化] UI応答速度を向上させています...
-reg add "HKCU\Control Panel\Desktop" /v "MenuShowDelay" /t REG_SZ /d "0" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f >nul 2>&1
-echo  - UI応答速度を向上させました
 
 echo [システム最適化] 固定キー機能を無効化しています...
 reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "506" /f >nul 2>&1
@@ -320,9 +315,6 @@ echo  - GameDVR (録画機能) を無効化しました
 
 rem 電力スロットリング無効化（バックグラウンド処理の遅延防止）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
-
-rem 予測読み込み（Prefetcher）をレジストリで無効化
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 0 /f >nul 2>&1
 
 rem ===================================================
 rem MMAgent設定（SysMainが必要）
@@ -476,7 +468,11 @@ netsh int tcp set supplemental template=Compat congestionprovider=BBR2
 echo  - TCP設定を最適化しました
 
 echo [ネットワーク最適化] 日本国内向けのDNS応答を安定化しています...
-powershell -NoProfile -Command "Get-NetAdapter -Physical | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('8.8.8.8','8.8.4.4') -AddressFamily IPv4 -ErrorAction Stop } catch {}; try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('2001:4860:4860::8888','2001:4860:4860::8844') -AddressFamily IPv6 -ErrorAction Stop } catch {} }"
+powershell -NoProfile -Command ^
+    "Get-NetAdapter -Physical | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { " ^
+    "    try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('8.8.8.8','8.8.4.4') -AddressFamily IPv4 -ErrorAction Stop } catch {} " ^
+    "    try { Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ('2001:4860:4860::8888','2001:4860:4860::8844') -AddressFamily IPv6 -ErrorAction Stop } catch {} " ^
+    "}"
 echo  - DNSサーバーを国内でも応答性が高いAnycast構成に設定しました
 
 rem ===================================================
