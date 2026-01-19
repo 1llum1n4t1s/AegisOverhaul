@@ -40,9 +40,9 @@ powershell -Command "Get-AppxPackage | ForEach-Object { Add-AppxPackage -Disable
 echo  - すべてのストアアプリのリセットを完了しました
 
 rem ===================================================
-rem サービス管理セクション
+rem サービスが使用しているファイルを削除するために停止しています。PC再起動で再開されます。
 rem ===================================================
-echo [サービス管理] 不要なサービスを停止しています...
+echo [サービス管理] サービスを停止しています...
 for %%S in (bits wuauserv appidsvc usosvc FontCache SysMain wsearch) do (
     net stop "%%S" 2>nul
     echo  - %%S サービスを停止しました
@@ -63,6 +63,7 @@ rem Microsoft関連のキャッシュファイル
 call :CleanDirectory "%APPDATA%\Microsoft\Office\Recent"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\FontCache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Cache"
+call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Watson"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Internet Explorer"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Office\16.0\Wef"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Office\SolutionPackages"
@@ -112,8 +113,6 @@ rem 不要なディレクトリの削除
 echo [ファイルクリーンアップ] 不要なディレクトリを削除しています...
 rmdir /s /q "%SystemRoot%\SoftwareDistribution" 2>nul
 rmdir /s /q "%SystemRoot%\Prefetch" 2>nul
-rmdir /s /q "%USERPROFILE%\.aws" 2>nul
-rmdir /s /q "%USERPROFILE%\.config" 2>nul
 rmdir /s /q "%USERPROFILE%\.dbus-keyrings" 2>nul
 rmdir /s /q "%USERPROFILE%\.dotnet" 2>nul
 rmdir /s /q "%USERPROFILE%\.monica-code" 2>nul
@@ -134,10 +133,12 @@ rmdir /s /q "C:\Windows.old" 2>nul
 rem 特定のファイル削除
 echo [ファイルクリーンアップ] キャッシュファイルを削除しています...
 del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" 2>nul
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" 2>nul
 del /q /f "%LOCALAPPDATA%\IconCache.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
+del /q /f "%WinDir%\System32\FNTCACHE.DAT" 2>nul
+del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" 2>nul
+
 
 rem echo [ファイルクリーンアップ] 不要なIDE・開発環境フォルダを削除しています...
 rem set "FOLDERS_TO_DELETE=.idea"
@@ -204,6 +205,7 @@ for /d %%b in (
         if exist "%%~p\Code Cache" (
             call :CleanDirectory "%%~p\Code Cache"
         )
+        rem Clear Service Workers
         if exist "%%~p\Service Worker" (
             call :CleanDirectory "%%~p\Service Worker"
         )
@@ -288,13 +290,14 @@ timeout /t 1 /nobreak >nul
 echo  - システムトレイアイコンをリセットしました
 
 echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
-Dism.exe /online /Cleanup-Image /StartComponentCleanup /StartComponentCleanup:ResetBase >nul 2>&1
+Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
 echo  - Windows Updateキャッシュを削除しました
 
-echo [システム最適化] UI応答速度を向上させています...
-reg add "HKCU\Control Panel\Desktop" /v "MenuShowDelay" /t REG_SZ /d "0" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f >nul 2>&1
-echo  - UI応答速度を向上させました
+echo [システム最適化] 固定キー機能を無効化しています...
+reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "506" /f >nul 2>&1
+reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v "Flags" /t REG_SZ /d "58" /f >nul 2>&1
+reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v "Flags" /t REG_SZ /d "122" /f >nul 2>&1
+echo  - 固定キー機能を無効化しました
 
 rem システムキャッシュをWindowsデフォルト設定に戻す（デスクトップ向け）
 reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /f >nul 2>&1
@@ -303,6 +306,12 @@ rem ゲームモードの優先度設定（ゲームプロセス優先化）
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f >nul 2>&1
+
+echo [システム最適化] GameDVR (録画機能) のみを無効化しています (Win+Gは使用可能)...
+rem バックグラウンド録画とキャプチャ機能を無効化
+reg add "HKCU\System\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+echo  - GameDVR (録画機能) を無効化しました
 
 rem 電力スロットリング無効化（バックグラウンド処理の遅延防止）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
@@ -320,9 +329,8 @@ if %errorlevel% neq 0 (
 )
 powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue } catch {}"
 powershell -NoProfile -Command "try { Enable-MMAgent -PageCombining -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Set-MMAgent -MaxOperationAPIFiles 128 -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "if (-not (Get-MMAgent).ApplicationLaunchPrefetching) { Enable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue }"
-powershell -NoProfile -Command "if (-not (Get-MMAgent).OperationAPI) { Enable-MMAgent -OperationAPI -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "try { Disable-MMAgent -OperationAPI -ErrorAction SilentlyContinue } catch {}"
+powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue } catch {}"
 powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
 echo  - MMAgentの設定を完了しました
 
