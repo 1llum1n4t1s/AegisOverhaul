@@ -42,8 +42,12 @@ echo  - すべてのストアアプリのリセットを完了しました
 rem ===================================================
 rem サービスが使用しているファイルを削除するために停止しています。PC再起動で再開されます。
 rem ===================================================
+echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
+Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
+echo  - Windows Updateキャッシュを削除しました
+
 echo [サービス管理] サービスを停止しています...
-for %%S in (bits wuauserv appidsvc usosvc FontCache SysMain wsearch) do (
+for %%S in (bits wuauserv usosvc FontCache SysMain wsearch) do (
     net stop "%%S" 2>nul
     echo  - %%S サービスを停止しました
 )
@@ -76,8 +80,6 @@ call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\OneAuth"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\Temporary Internet Files"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
-call :CleanDirectory "%LOCALAPPDATA%\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState"
-call :CleanDirectory "%LOCALAPPDATA%\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\TempState"
 
 rem システム関連のキャッシュファイル
 call :CleanDirectory "%LOCALAPPDATA%\CrashDumps"
@@ -292,20 +294,11 @@ reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Curr
 timeout /t 1 /nobreak >nul
 echo  - システムトレイアイコンをリセットしました
 
-echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
-Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
-echo  - Windows Updateキャッシュを削除しました
-
 echo [システム最適化] 固定キー機能を無効化しています...
 reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "506" /f >nul 2>&1
 reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v "Flags" /t REG_SZ /d "58" /f >nul 2>&1
 reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v "Flags" /t REG_SZ /d "122" /f >nul 2>&1
 echo  - 固定キー機能を無効化しました
-
-rem ゲームモードの優先度設定（ゲームプロセス優先化）
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f >nul 2>&1
 
 echo [システム最適化] GameDVR (録画機能) のみを無効化しています (Win+Gは使用可能)...
 rem バックグラウンド録画とキャプチャ機能を無効化
@@ -316,24 +309,6 @@ echo  - GameDVR (録画機能) を無効化しました
 rem 電力スロットリング無効化（デスクトップPCとしての使い方なら設定はしてもOK）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
 
-rem ===================================================
-rem MMAgent設定（SysMainが必要）
-rem ===================================================
-echo [システム最適化] MMAgentを設定しています...
-rem SysMainサービスが稼働していることを確認
-sc query SysMain | find "RUNNING" >nul
-if %errorlevel% neq 0 (
-    echo  - SysMainサービスを開始しています...
-    net start SysMain 2>nul
-    timeout /t 3 /nobreak >nul
-)
-powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Enable-MMAgent -PageCombining -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Disable-MMAgent -OperationAPI -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue } catch {}"
-powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
-echo  - MMAgentの設定を完了しました
-
 rem ダウンロードフォルダなどが英語になっているのを修復する
 regsvr32 shell32.dll /i:U /s
 echo  - フォルダ名を修復しました
@@ -342,10 +317,6 @@ rem スタートアップフォルダのアプリの起動速度を向上
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "WaitForIdleState" /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "StartupDelayInMSec" /t REG_DWORD /d 0 /f
 echo  - スタートアップフォルダのアプリの起動速度を向上しました
-
-rem MPO（マルチプレーンオーバーレイ）を無効化（表示のちらつき対策・安定性向上）
-reg add "HKLM\SOFTWARE\Microsoft\Windows\Dwm" /v OverlayTestMode /t REG_DWORD /d 5 /f
-echo  - MPO（マルチプレーンオーバーレイ）を無効化しました
 
 rem リモートデスクトップのFPSを60FPSに設定
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations" /v DWMFRAMEINTERVAL /t REG_DWORD /d 15 /f
@@ -365,15 +336,15 @@ powercfg /change standby-timeout-dc 60
 
 rem 電源ボタンとカバーの動作設定
 rem 電源接続時：電源ボタンでシャットダウン (0:何もしない, 1:スリープ, 2:休止, 3:シャットダウン)
-powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+rem powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
 rem 電源接続時：カバーを閉じても何もしない
-powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+rem powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
 rem バッテリー駆動時：電源ボタンでシャットダウン
-powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+rem powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
 rem バッテリー駆動時：カバーを閉じるとスリープ
-powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+rem powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
 rem 設定を適用
-powercfg /setactive SCHEME_CURRENT
+rem powercfg /setactive SCHEME_CURRENT
 
 echo  - 電源プランをWindows標準にリセットしました
 
@@ -398,7 +369,7 @@ rem ===================================================
 echo [ネットワーク最適化] ネットワーク設定をリセットしています...
 rem ネットワークアダプタ詳細設定（ARPオフロード等）を含むネットワーク構成を再検出して既定に戻す
 rem 注意: VPN/仮想アダプタ等も再構成されるため、必要に応じて再設定してください
-rem netcfg -d
+netcfg -d
 
 rem DNSキャッシュとHTTPログのクリア
 netsh http flush logbuffer
