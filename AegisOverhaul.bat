@@ -61,6 +61,7 @@ call :CleanDirectory "%APPDATA%\discord\VideoDecodeStats"
 
 rem Microsoft関連のキャッシュファイル
 call :CleanDirectory "%APPDATA%\Microsoft\Office\Recent"
+call :CleanDirectory "%APPDATA%\Microsoft\Windows\Recent"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\FontCache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Cache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Watson"
@@ -75,6 +76,9 @@ call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\INetCache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\OneAuth"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\Temporary Internet Files"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
+call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
+call :CleanDirectory "%LOCALAPPDATA%\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState"
+call :CleanDirectory "%LOCALAPPDATA%\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\TempState"
 
 rem システム関連のキャッシュファイル
 call :CleanDirectory "%LOCALAPPDATA%\CrashDumps"
