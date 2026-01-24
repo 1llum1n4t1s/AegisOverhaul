@@ -61,7 +61,6 @@ call :CleanDirectory "%APPDATA%\discord\VideoDecodeStats"
 
 rem Microsoft関連のキャッシュファイル
 call :CleanDirectory "%APPDATA%\Microsoft\Office\Recent"
-call :CleanDirectory "%APPDATA%\Microsoft\Windows\Recent"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\FontCache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Cache"
 call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Watson"
@@ -278,7 +277,7 @@ echo  - ゴミ箱を空にしました
 rem ===================================================
 rem Windows Defender最適化セクション
 rem ===================================================
-echo [Windows Defender] 定義ファイル更新とスキャン除外設定の初期化を実行しています...
+echo [Windows Defender] 定義ファイル更新を実行しています...
 rem Windows Defender の定義ファイル更新を実行
 "%ProgramFiles%\Windows Defender\MpCmdRun.exe" -removedefinitions -dynamicsignatures >nul 2>&1
 "%ProgramFiles%\Windows Defender\MpCmdRun.exe" -SignatureUpdate >nul 2>&1
@@ -303,9 +302,6 @@ reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v "Flags" /t REG_SZ /d "5
 reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v "Flags" /t REG_SZ /d "122" /f >nul 2>&1
 echo  - 固定キー機能を無効化しました
 
-rem システムキャッシュをWindowsデフォルト設定に戻す（デスクトップ向け）
-reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v LargeSystemCache /f >nul 2>&1
-
 rem ゲームモードの優先度設定（ゲームプロセス優先化）
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f >nul 2>&1
@@ -317,7 +313,7 @@ reg add "HKCU\System\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 0 /f 
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
 echo  - GameDVR (録画機能) を無効化しました
 
-rem 電力スロットリング無効化（バックグラウンド処理の遅延防止）
+rem 電力スロットリング無効化（デスクトップPCとしての使い方なら設定はしてもOK）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
 
 rem ===================================================
@@ -338,35 +334,9 @@ powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationLaunchPrefetch
 powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
 echo  - MMAgentの設定を完了しました
 
-rem ===================================================
-rem オーディオ最適化セクション（安全性重視版）
-rem ===================================================
-echo [オーディオ最適化] 音声途切れ対策を実施しています...
-rem USB 選択的サスペンド無効化（Microsoft公式推奨・安全）
-powershell -Command "Get-ChildItem -Path 'HKLM:\SYSTEM\CurrentControlSet\Enum\USB' -Recurse -ErrorAction SilentlyContinue | ForEach-Object { try { Set-ItemProperty -Path $_.PSPath -Name 'SelectiveSuspendOn' -Value 0 -ErrorAction SilentlyContinue } catch {} }"
-rem マルチメディアタスク優先度を上げる（最も安全）
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Playback" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Capture" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
-rem マルチメディア常時高優先度（マイナス影響無し）
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "AlwaysHighPriority" /t REG_DWORD /d 1 /f >nul 2>&1
-rem MMCSS（マルチメディアクラススケジューラ）サービス確認
-net start MMCSS >nul 2>&1
-echo  - オーディオ優先度最適化を完了しました
-
-rem NVIDIA GPU の MSI MessageNumberLimit を削除（CPU0集中対策）
-echo [システム最適化] NVIDIA GPU の割り込み分散設定を最適化しています...
-powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_PnPEntity | Where-Object { $_.Name -like '*NVIDIA*' -and $_.DeviceID -like '*VEN_10DE*' } | ForEach-Object { $path = \"HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.DeviceID)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties\"; if (Test-Path $path) { Remove-ItemProperty -Path $path -Name 'MessageNumberLimit' -ErrorAction SilentlyContinue } }"
-echo  - NVIDIA GPU の割り込み分散設定を最適化しました（再起動後に有効になります）
-
 rem ダウンロードフォルダなどが英語になっているのを修復する
 regsvr32 shell32.dll /i:U /s
 echo  - フォルダ名を修復しました
-
-rem ネットワークドライブアクセスの最適化
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v "DirectoryCacheLifetime" /t REG_DWORD /d 0 /f >nul 2>&1
-
-rem QoS予約帯域幅を0に設定（エクスプローラーの表示速度向上）
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Psched" /v "NonBestEffortLimit" /t REG_DWORD /d 0 /f >nul 2>&1
 
 rem スタートアップフォルダのアプリの起動速度を向上
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "WaitForIdleState" /t REG_DWORD /d 0 /f
@@ -386,7 +356,7 @@ powercfg /restoredefaultschemes >nul 2>&1
 powercfg /setactive SCHEME_BALANCED >nul 2>&1
 
 rem ディスプレイ消灯時間を設定
-powercfg /change monitor-timeout-ac 360
+powercfg /change monitor-timeout-ac 180
 powercfg /change monitor-timeout-dc 30
 
 rem スタンバイ時間を設定
@@ -426,6 +396,9 @@ rem ===================================================
 rem ネットワーク最適化セクション
 rem ===================================================
 echo [ネットワーク最適化] ネットワーク設定をリセットしています...
+rem ネットワークアダプタ詳細設定（ARPオフロード等）を含むネットワーク構成を再検出して既定に戻す
+rem 注意: VPN/仮想アダプタ等も再構成されるため、必要に応じて再設定してください
+rem netcfg -d
 
 rem DNSキャッシュとHTTPログのクリア
 netsh http flush logbuffer
