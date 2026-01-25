@@ -36,7 +36,9 @@ winget upgrade --all --include-unknown --silent --disable-interactivity --accept
 echo  - wingetによるアプリケーションの更新が完了しました
 
 echo [アプリケーション更新] Microsoft Store アプリのリセットを開始...
+powershell -Command "Stop-Process -Name "StartMenuExperienceHost" -Force"
 powershell -Command "Get-AppxPackage | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \"$($_.InstallLocation)\AppXManifest.xml\" -ErrorAction SilentlyContinue }"
+powershell -Command "Get-AppxPackage Microsoft.Windows.StartMenuExperienceHost | Reset-AppxPackage"
 echo  - すべてのストアアプリのリセットを完了しました
 
 rem ===================================================
@@ -143,17 +145,6 @@ del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
 del /q /f "%WinDir%\System32\FNTCACHE.DAT" 2>nul
 del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" 2>nul
-
-
-rem echo [ファイルクリーンアップ] 不要なIDE・開発環境フォルダを削除しています...
-rem set "FOLDERS_TO_DELETE=.idea"
-rem for %%f in (%FOLDERS_TO_DELETE%) do (
-rem     echo   - %%f フォルダを検索中...
-rem     for /f "delims=" %%i in ('dir /s /b /ad "C:\%%f" 2^>nul') do (
-rem         rmdir /s /q "%%i" 2>nul
-rem         echo     - %%i を削除しました
-rem     )
-rem )
 
 rem ブラウザキャッシュのクリーンアップ
 echo [ファイルクリーンアップ] ブラウザキャッシュを削除しています...
@@ -336,15 +327,15 @@ powercfg /change standby-timeout-dc 60
 
 rem 電源ボタンとカバーの動作設定
 rem 電源接続時：電源ボタンでシャットダウン (0:何もしない, 1:スリープ, 2:休止, 3:シャットダウン)
-rem powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
 rem 電源接続時：カバーを閉じても何もしない
-rem powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
 rem バッテリー駆動時：電源ボタンでシャットダウン
-rem powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
+powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
 rem バッテリー駆動時：カバーを閉じるとスリープ
-rem powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
 rem 設定を適用
-rem powercfg /setactive SCHEME_CURRENT
+powercfg /setactive SCHEME_CURRENT
 
 echo  - 電源プランをWindows標準にリセットしました
 
@@ -380,7 +371,7 @@ netsh winhttp reset proxy
 netsh winhttp reset autoproxy
 
 rem ファイアウォールのリセット（現在はコメントアウト）
-rem netsh advfirewall reset
+netsh advfirewall reset
 
 rem 重要なTCP/IP設定リセット
 netsh winsock reset
@@ -438,6 +429,13 @@ echo  - イベントビューアーのログを削除しました（一部のシ
 echo [最終クリーンアップ] Microsoft Store アプリのキャッシュをクリアしています...
 WSReset.exe
 echo  - Microsoft Store のキャッシュをクリアしました
+
+echo.
+echo すべてのリセット処理が完了しました。
+echo 一部の設定は再起動後に完全に反映されます。
+echo.
+echo [再起動] システムを再起動しています...
+shutdown /r /f /t 0
 
 endlocal
 exit /b
