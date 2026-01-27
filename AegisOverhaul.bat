@@ -300,6 +300,19 @@ echo  - GameDVR (録画機能) を無効化しました
 rem 電力スロットリング無効化（デスクトップPCとしての使い方なら設定はしてもOK）
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f >nul 2>&1
 
+rem ===================================================
+rem オーディオ最適化セクション（安全性重視版）
+rem ===================================================
+rem マルチメディアタスク優先度を上げる（最も安全）
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Playback" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Capture" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
+echo  - オーディオ優先度最適化を完了しました
+
+rem NVIDIA GPU の MSI MessageNumberLimit を削除（CPU0集中対策）
+echo [システム最適化] NVIDIA GPU の割り込み分散設定を最適化しています...
+powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_PnPEntity | Where-Object { $_.Name -like '*NVIDIA*' -and $_.DeviceID -like '*VEN_10DE*' } | ForEach-Object { $path = \"HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.DeviceID)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties\"; if (Test-Path $path) { Remove-ItemProperty -Path $path -Name 'MessageNumberLimit' -ErrorAction SilentlyContinue } }"
+echo  - NVIDIA GPU の割り込み分散設定を最適化しました（再起動後に有効になります）
+
 rem ダウンロードフォルダなどが英語になっているのを修復する
 regsvr32 shell32.dll /i:U /s
 echo  - フォルダ名を修復しました
@@ -371,7 +384,7 @@ netsh winhttp reset proxy
 netsh winhttp reset autoproxy
 
 rem ファイアウォールのリセット（現在はコメントアウト）
-netsh advfirewall reset
+rem netsh advfirewall reset
 
 rem 重要なTCP/IP設定リセット
 netsh winsock reset
