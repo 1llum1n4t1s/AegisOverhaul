@@ -48,6 +48,25 @@ echo [ディスククリーンアップ] Windows Updateキャッシュを削除�
 Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
 echo  - Windows Updateキャッシュを削除しました
 
+
+rem ===================================================
+rem MMAgent設定（SysMainが必要）
+rem ===================================================
+echo [システム最適化] MMAgentを設定しています...
+rem メモリ圧縮: メモリ不足時にデータを圧縮してメモリを節約する機能
+powershell -Command "Enable-MMAgent -MemoryCompression"
+rem ページ結合: 同一内容のメモリページを統合する機能（CPU負荷があるため無効）
+powershell -Command "Disable-MMAgent -PageCombining"
+rem OperationAPI: 特定の操作シナリオを記録・最適化する機能（ゲーム用途では不要）
+powershell -Command "Disable-MMAgent -OperationAPI"
+rem MaxOperationAPIFiles: OperationAPIのプリフェッチファイル最大数（OperationAPI無効時は実質無効）
+powershell -Command "Set-MMAgent -MaxOperationAPIFiles 256"
+rem ApplicationLaunchPrefetching: 過去の起動パターンを学習し必要なファイルを先読みする機能
+powershell -Command "Enable-MMAgent -ApplicationLaunchPrefetching"
+rem ApplicationPreLaunch: よく使うアプリをバックグラウンドで事前起動する機能（メモリ消費するため無効）
+powershell -Command "Disable-MMAgent -ApplicationPreLaunch"
+echo  - MMAgentの設定を完了しました
+
 echo [サービス管理] サービスを停止しています...
 for %%S in (bits wuauserv usosvc FontCache SysMain wsearch) do (
     net stop "%%S" 2>nul
@@ -116,16 +135,26 @@ call :CleanDirectory "%USERPROFILE%\AppData\LocalLow\Microsoft\CryptnetUrlCache"
 call :CleanDirectory "%USERPROFILE%\Recent"
 call :CleanDirectory "%USERPROFILE%\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
 
+rem Microsoftアカウントログインセッション情報
+call :CleanDirectory "%LocalAppData%\Microsoft\TokenBroker"
+call :CleanDirectory "%LocalAppData%\Microsoft\OneAuth"
+call :CleanDirectory "%LocalAppData%\Microsoft\IdentityCache"
+call :CleanDirectory "%LocalAppData%\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy"
+call :CleanDirectory "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
+
 rem 不要なディレクトリの削除
 echo [ファイルクリーンアップ] 不要なディレクトリを削除しています...
 rmdir /s /q "%SystemRoot%\SoftwareDistribution" 2>nul
 rmdir /s /q "%SystemRoot%\Prefetch" 2>nul
+rmdir /s /q "%USERPROFILE%\.aws" 2>nul
+rmdir /s /q "%USERPROFILE%\.config" 2>nul
 rmdir /s /q "%USERPROFILE%\.dbus-keyrings" 2>nul
 rmdir /s /q "%USERPROFILE%\.dotnet" 2>nul
 rmdir /s /q "%USERPROFILE%\.monica-code" 2>nul
 rmdir /s /q "%USERPROFILE%\.nuget" 2>nul
 rmdir /s /q "%USERPROFILE%\.omnisharp" 2>nul
 rmdir /s /q "%USERPROFILE%\.templateengine" 2>nul
+rmdir /s /q "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" 2>nul
 rmdir /s /q "%USERPROFILE%\Bootstrap Studio Backups" 2>nul
 rmdir /s /q "%USERPROFILE%\intellij-chatgpt" 2>nul
 rmdir /s /q "C:\$SysReset" 2>nul
@@ -140,6 +169,7 @@ rmdir /s /q "C:\Windows.old" 2>nul
 rem 特定のファイル削除
 echo [ファイルクリーンアップ] キャッシュファイルを削除しています...
 del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" 2>nul
+del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" 2>nul
 del /q /f "%LOCALAPPDATA%\IconCache.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
 del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
@@ -201,7 +231,6 @@ for /d %%b in (
         if exist "%%~p\Code Cache" (
             call :CleanDirectory "%%~p\Code Cache"
         )
-        rem Clear Service Workers
         if exist "%%~p\Service Worker" (
             call :CleanDirectory "%%~p\Service Worker"
         )
@@ -303,12 +332,12 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v PowerTh
 rem ===================================================
 rem オーディオ最適化セクション（安全性重視版）
 rem ===================================================
-rem マルチメディアタスク優先度を上げる（最も安全）
+rem マルチメディアタスク優先度を上げる（効果あるらしい）
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Playback" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Capture" /v "Priority" /t REG_DWORD /d 6 /f >nul 2>&1
 echo  - オーディオ優先度最適化を完了しました
 
-rem NVIDIA GPU の MSI MessageNumberLimit を削除（CPU0集中対策）
+rem NVIDIA GPU の MSI MessageNumberLimit を削除（CPU0集中対策）（効果あるらしい）
 echo [システム最適化] NVIDIA GPU の割り込み分散設定を最適化しています...
 powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_PnPEntity | Where-Object { $_.Name -like '*NVIDIA*' -and $_.DeviceID -like '*VEN_10DE*' } | ForEach-Object { $path = \"HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.DeviceID)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties\"; if (Test-Path $path) { Remove-ItemProperty -Path $path -Name 'MessageNumberLimit' -ErrorAction SilentlyContinue } }"
 echo  - NVIDIA GPU の割り込み分散設定を最適化しました（再起動後に有効になります）
@@ -336,7 +365,7 @@ powercfg /change monitor-timeout-dc 30
 
 rem スタンバイ時間を設定
 powercfg /change standby-timeout-ac 0
-powercfg /change standby-timeout-dc 60
+powercfg /change standby-timeout-dc 0
 
 rem 電源ボタンとカバーの動作設定
 rem 電源接続時：電源ボタンでシャットダウン (0:何もしない, 1:スリープ, 2:休止, 3:シャットダウン)
@@ -373,7 +402,7 @@ rem ===================================================
 echo [ネットワーク最適化] ネットワーク設定をリセットしています...
 rem ネットワークアダプタ詳細設定（ARPオフロード等）を含むネットワーク構成を再検出して既定に戻す
 rem 注意: VPN/仮想アダプタ等も再構成されるため、必要に応じて再設定してください
-rem netcfg -d
+netcfg -d
 
 rem DNSキャッシュとHTTPログのクリア
 netsh http flush logbuffer
@@ -384,7 +413,7 @@ netsh winhttp reset proxy
 netsh winhttp reset autoproxy
 
 rem ファイアウォールのリセット（現在はコメントアウト）
-rem netsh advfirewall reset
+netsh advfirewall reset
 
 rem 重要なTCP/IP設定リセット
 netsh winsock reset
