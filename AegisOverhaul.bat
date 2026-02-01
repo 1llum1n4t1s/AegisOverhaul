@@ -108,6 +108,11 @@ echo [ファイルクリーンアップ] システム関連の一時ファイル
         "%LOCALAPPDATA%\NVIDIA\DXCache"
         "%LOCALAPPDATA%\Temp"
         "%LOCALAPPDATA%\UnrealEngine"
+        "%LOCALAPPDATA%\Microsoft\TokenBroker"
+        "%LOCALAPPDATA%\Microsoft\OneAuth"
+        "%LOCALAPPDATA%\Microsoft\IdentityCache"
+        "%LOCALAPPDATA%\Packages\MSTeams_8wekyb3d8bbwe"
+        "%LocalAppData%\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy"
         "%ProgramData%\LGHUB\cache"
         "%ProgramData%\Microsoft\EdgeUpdate\Log"
         "%ProgramData%\Microsoft\Network\Downloader"
@@ -127,10 +132,7 @@ echo [ファイルクリーンアップ] システム関連の一時ファイル
         "%USERPROFILE%\AppData\LocalLow\Microsoft\CryptnetUrlCache"
         "%USERPROFILE%\Recent"
         "%USERPROFILE%\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
-        "%LocalAppData%\Microsoft\TokenBroker"
-        "%LocalAppData%\Microsoft\OneAuth"
-        "%LocalAppData%\Microsoft\IdentityCache"
-        "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
+
     ) do (
         call :CleanDirectory "%%~D"
     )
