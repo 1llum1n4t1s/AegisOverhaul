@@ -452,6 +452,11 @@ netsh int tcp set global fastopen=enabled
 netsh int tcp set global autotuninglevel=normal
 netsh int ipv6 set global loopbacklargemtu=disable
 netsh int ipv4 set global loopbacklargemtu=disable
+netsh int tcp set supplemental template=Internet congestionprovider=BBR2
+netsh int tcp set supplemental template=InternetCustom congestionprovider=BBR2
+netsh int tcp set supplemental template=Datacenter congestionprovider=BBR2
+netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
+netsh int tcp set supplemental template=Compat congestionprovider=BBR2
 echo  - TCP設定を最適化しました
 
 rem ===================================================
