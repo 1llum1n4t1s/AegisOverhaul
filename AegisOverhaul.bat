@@ -22,14 +22,20 @@ echo 管理者権限で実行されています。
 cd /d C:
 
 rem ===================================================
+rem エクスプローラー停止（操作ガード対策）
+rem ===================================================
+echo [エクスプローラー停止] エクスプローラーのプロセスを停止しています...
+taskkill /f /im explorer.exe >nul 2>&1
+timeout /t 1 /nobreak >nul
+
+rem ===================================================
 rem 作業用サービス停止
 rem ===================================================
 echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
-for %%P in (explorer.exe Teams.exe ms-teams.exe msedge.exe) do (
+for %%P in (Teams.exe ms-teams.exe msedge.exe) do (
     taskkill /f /im %%P >nul 2>&1
 )
 timeout /t 1 /nobreak >nul
-
 
 rem ===================================================
 rem アプリケーション更新セクション
@@ -44,32 +50,31 @@ powershell -Command "Get-AppxPackage | ForEach-Object { Add-AppxPackage -Disable
 powershell -Command "Get-AppxPackage Microsoft.Windows.StartMenuExperienceHost | Reset-AppxPackage"
 echo  - すべてのストアアプリのリセットを完了しました
 
-rem ===================================================
-rem サービスが使用しているファイルを削除するために停止しています。PC再起動で再開されます。
-rem ===================================================
 echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
 Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
 echo  - Windows Updateキャッシュを削除しました
-
 
 rem ===================================================
 rem MMAgent設定（SysMainが必要）
 rem ===================================================
 echo [システム最適化] MMAgentを設定しています...
 rem メモリ圧縮: メモリ不足時にデータを圧縮してメモリを節約する機能
-powershell -Command "Enable-MMAgent -MemoryCompression"
+powershell -NoProfile -Command "try { Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue } catch {}"
 rem ページ結合: 同一内容のメモリページを統合する機能（CPU負荷があるため無効）
-powershell -Command "Disable-MMAgent -PageCombining"
+powershell -NoProfile -Command "try { Disable-MMAgent -PageCombining -ErrorAction SilentlyContinue } catch {}"
+rem MaxOperationAPIFiles: OperationAPIのプリフェッチファイル最大数
+rem powershell -NoProfile -Command "try { Set-MMAgent -MaxOperationAPIFiles 256 -ErrorAction SilentlyContinue } catch {}"
 rem OperationAPI: 特定の操作シナリオを記録・最適化する機能（ゲーム用途では不要）
-powershell -Command "Disable-MMAgent -OperationAPI"
-rem MaxOperationAPIFiles: OperationAPIのプリフェッチファイル最大数（OperationAPI無効時は実質無効）
-powershell -Command "Set-MMAgent -MaxOperationAPIFiles 256"
+powershell -NoProfile -Command "try { Disable-MMAgent -OperationAPI -ErrorAction SilentlyContinue } catch {}"
 rem ApplicationLaunchPrefetching: 過去の起動パターンを学習し必要なファイルを先読みする機能
-powershell -Command "Enable-MMAgent -ApplicationLaunchPrefetching"
+powershell -NoProfile -Command "try { Enable-MMAgent -ApplicationLaunchPrefetching -ErrorAction SilentlyContinue } catch {}"
 rem ApplicationPreLaunch: よく使うアプリをバックグラウンドで事前起動する機能（メモリ消費するため無効）
-powershell -Command "Disable-MMAgent -ApplicationPreLaunch"
+powershell -NoProfile -Command "try { Disable-MMAgent -ApplicationPreLaunch -ErrorAction SilentlyContinue } catch {}"
 echo  - MMAgentの設定を完了しました
 
+rem ===================================================
+rem サービスが使用しているファイルを削除するために停止しています。PC再起動で再開されます。
+rem ===================================================
 echo [サービス管理] サービスを停止しています...
 for %%S in (bits wuauserv usosvc FontCache SysMain wsearch) do (
     net stop "%%S" >nul 2>&1
