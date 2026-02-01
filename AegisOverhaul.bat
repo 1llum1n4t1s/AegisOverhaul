@@ -22,22 +22,6 @@ echo 管理者権限で実行されています。
 cd /d C:
 
 rem ===================================================
-rem エクスプローラー停止（操作ガード対策）
-rem ===================================================
-echo [エクスプローラー停止] エクスプローラーのプロセスを停止しています...
-taskkill /f /im explorer.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-
-rem ===================================================
-rem 作業用サービス停止
-rem ===================================================
-echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
-for %%P in (Teams.exe ms-teams.exe msedge.exe) do (
-    taskkill /f /im %%P >nul 2>&1
-)
-timeout /t 1 /nobreak >nul
-
-rem ===================================================
 rem アプリケーション更新セクション
 rem ===================================================
 echo [アプリケーション更新] wingetによるアプリケーションの更新を開始...
@@ -49,6 +33,15 @@ powershell -Command "Stop-Process -Name StartMenuExperienceHost -Force -ErrorAct
 powershell -Command "Get-AppxPackage | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \"$($_.InstallLocation)\AppXManifest.xml\" -ErrorAction SilentlyContinue }"
 powershell -Command "Get-AppxPackage Microsoft.Windows.StartMenuExperienceHost | Reset-AppxPackage"
 echo  - すべてのストアアプリのリセットを完了しました
+
+rem ===================================================
+rem 作業用サービス停止
+rem ===================================================
+echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
+for %%P in (explorer.exe Teams.exe ms-teams.exe msedge.exe) do (
+    taskkill /f /im %%P >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
 
 echo [ディスククリーンアップ] Windows Updateキャッシュを削除しています...
 Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase >nul 2>&1
