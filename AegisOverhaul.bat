@@ -415,7 +415,7 @@ rem ===================================================
 echo [ネットワーク最適化] ネットワーク設定をリセットしています...
 rem ネットワークアダプタ詳細設定（ARPオフロード等）を含むネットワーク構成を再検出して既定に戻す
 rem 注意: VPN/仮想アダプタ等も再構成されるため、必要に応じて再設定してください
-netcfg -d
+rem netcfg -d
 
 rem DNSキャッシュとHTTPログのクリア
 netsh http flush logbuffer
@@ -426,7 +426,7 @@ netsh winhttp reset proxy
 netsh winhttp reset autoproxy
 
 rem ファイアウォールのリセット（現在はコメントアウト）
-netsh advfirewall reset
+rem netsh advfirewall reset
 
 rem 重要なTCP/IP設定リセット
 netsh winsock reset
