@@ -29,9 +29,7 @@ winget upgrade --all --include-unknown --silent --disable-interactivity --accept
 echo  - wingetによるアプリケーションの更新が完了しました
 
 echo [アプリケーション更新] Microsoft Store アプリのリセットを開始...
-powershell -Command "Stop-Process -Name StartMenuExperienceHost -Force -ErrorAction SilentlyContinue"
 powershell -Command "Get-AppxPackage | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \"$($_.InstallLocation)\AppXManifest.xml\" -ErrorAction SilentlyContinue }"
-powershell -Command "Get-AppxPackage Microsoft.Windows.StartMenuExperienceHost | Reset-AppxPackage"
 echo  - すべてのストアアプリのリセットを完了しました
 
 rem ===================================================
