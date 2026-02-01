@@ -459,14 +459,14 @@ echo  - TCP設定を最適化しました
 rem ===================================================
 rem エクスプローラー設定セクション（エクスプローラー停止中に実行）
 rem ===================================================
-echo [エクスプローラー] フォルダテンプレートを汎用に固定しています...
-reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f >nul 2>&1
-echo  - すべてのフォルダをGeneral Items（汎用）に統一しました
-
 echo [エクスプローラー] フォルダビュー設定キャッシュをクリアしています...
 reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
 reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
 echo  - フォルダビュー設定キャッシュをクリアしました
+
+echo [エクスプローラー] フォルダテンプレートを汎用に固定しています...
+reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f >nul 2>&1
+echo  - すべてのフォルダをGeneral Items（汎用）に統一しました
 
 rem ===================================================
 rem エクスプローラーの起動プロセスを再開(操作ガード対策)
