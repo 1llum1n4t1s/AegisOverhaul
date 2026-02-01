@@ -25,10 +25,9 @@ rem ===================================================
 rem 作業用サービス停止
 rem ===================================================
 echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
-taskkill /f /im explorer.exe >nul 2>&1
-taskkill /f /im Teams.exe >nul 2>&1
-taskkill /f /im ms-teams.exe >nul 2>&1
-taskkill /f /im msedge.exe >nul 2>&1
+for %%P in (explorer.exe Teams.exe ms-teams.exe msedge.exe) do (
+    taskkill /f /im %%P >nul 2>&1
+)
 timeout /t 1 /nobreak >nul
 
 
@@ -82,102 +81,101 @@ rem ファイルクリーンアップセクション
 rem ===================================================
 echo [ファイルクリーンアップ] システム関連の一時ファイルを削除しています...
 
-rem Discord関連のキャッシュファイル
-call :CleanDirectory "%APPDATA%\discord\Cache"
-call :CleanDirectory "%APPDATA%\discord\Code Cache"
-call :CleanDirectory "%APPDATA%\discord\GPUCache"
-call :CleanDirectory "%APPDATA%\discord\VideoDecodeStats"
-
-rem Microsoft関連のキャッシュファイル
-call :CleanDirectory "%APPDATA%\Microsoft\Office\Recent"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\FontCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Cache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Watson"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Internet Explorer"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Office\16.0\Wef"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Office\SolutionPackages"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Outlook\HubAppFileCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\AppCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\Explorer"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\IdentityCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\INetCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\OneAuth"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\Temporary Internet Files"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
-call :CleanDirectory "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
-
-rem システム関連のキャッシュファイル
-call :CleanDirectory "%LOCALAPPDATA%\CrashDumps"
-call :CleanDirectory "%LOCALAPPDATA%\D3DSCache"
-call :CleanDirectory "%LOCALAPPDATA%\NuGet"
-call :CleanDirectory "%LOCALAPPDATA%\NVIDIA\DXCache"
-call :CleanDirectory "%LOCALAPPDATA%\Temp"
-call :CleanDirectory "%LOCALAPPDATA%\UnrealEngine"
-
-rem ProgramData関連のキャッシュファイル
-call :CleanDirectory "%ProgramData%\LGHUB\cache"
-call :CleanDirectory "%ProgramData%\Microsoft\EdgeUpdate\Log"
-call :CleanDirectory "%ProgramData%\Microsoft\Network\Downloader"
-call :CleanDirectory "%ProgramData%\Microsoft\Search\Data\Applications\Windows"
-call :CleanDirectory "%ProgramData%\Microsoft\Windows Defender\Definition Updates\Backup"
-call :CleanDirectory "%ProgramData%\Microsoft\Windows Defender\Scans\History\Results\Resource"
-call :CleanDirectory "%ProgramData%\Microsoft\Windows Defender\Support"
-call :CleanDirectory "%ProgramData%\USOShared\Logs"
-
-rem Windowsシステム関連のキャッシュファイル
-call :CleanDirectory "%SystemRoot%\Logs"
-call :CleanDirectory "%SystemRoot%\ServiceProfiles\LocalService\AppData\Local\FontCache"
-call :CleanDirectory "%SystemRoot%\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache"
-call :CleanDirectory "%SystemRoot%\System32\catroot2"
-call :CleanDirectory "%SystemRoot%\System32\LogFiles"
-call :CleanDirectory "%SystemRoot%\SystemTemp"
-call :CleanDirectory "%SystemRoot%\Temp"
-
-rem ユーザー関連のキャッシュファイル
-call :CleanDirectory "%USERPROFILE%\AppData\LocalLow\Intel"
-call :CleanDirectory "%USERPROFILE%\AppData\LocalLow\Microsoft\CryptnetUrlCache"
-call :CleanDirectory "%USERPROFILE%\Recent"
-call :CleanDirectory "%USERPROFILE%\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
-
-rem Microsoftアカウントログインセッション情報
-call :CleanDirectory "%LocalAppData%\Microsoft\TokenBroker"
-call :CleanDirectory "%LocalAppData%\Microsoft\OneAuth"
-call :CleanDirectory "%LocalAppData%\Microsoft\IdentityCache"
-call :CleanDirectory "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
+    rem 各種キャッシュディレクトリのクリーンアップ
+    for %%D in (
+        "%APPDATA%\discord\Cache"
+        "%APPDATA%\discord\Code Cache"
+        "%APPDATA%\discord\GPUCache"
+        "%APPDATA%\discord\VideoDecodeStats"
+        "%APPDATA%\Microsoft\Office\Recent"
+        "%LOCALAPPDATA%\Microsoft\FontCache"
+        "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Cache"
+        "%LOCALAPPDATA%\Microsoft\IME\15.0\IMEJP\Watson"
+        "%LOCALAPPDATA%\Microsoft\Internet Explorer"
+        "%LOCALAPPDATA%\Microsoft\Office\16.0\Wef"
+        "%LOCALAPPDATA%\Microsoft\Office\SolutionPackages"
+        "%LOCALAPPDATA%\Microsoft\Outlook\HubAppFileCache"
+        "%LOCALAPPDATA%\Microsoft\Windows\AppCache"
+        "%LOCALAPPDATA%\Microsoft\Windows\Explorer"
+        "%LOCALAPPDATA%\Microsoft\Windows\IdentityCache"
+        "%LOCALAPPDATA%\Microsoft\Windows\INetCache"
+        "%LOCALAPPDATA%\Microsoft\Windows\OneAuth"
+        "%LOCALAPPDATA%\Microsoft\Windows\Temporary Internet Files"
+        "%LOCALAPPDATA%\Microsoft\Windows\WebCache"
+        "%LOCALAPPDATA%\CrashDumps"
+        "%LOCALAPPDATA%\D3DSCache"
+        "%LOCALAPPDATA%\NuGet"
+        "%LOCALAPPDATA%\NVIDIA\DXCache"
+        "%LOCALAPPDATA%\Temp"
+        "%LOCALAPPDATA%\UnrealEngine"
+        "%ProgramData%\LGHUB\cache"
+        "%ProgramData%\Microsoft\EdgeUpdate\Log"
+        "%ProgramData%\Microsoft\Network\Downloader"
+        "%ProgramData%\Microsoft\Search\Data\Applications\Windows"
+        "%ProgramData%\Microsoft\Windows Defender\Definition Updates\Backup"
+        "%ProgramData%\Microsoft\Windows Defender\Scans\History\Results\Resource"
+        "%ProgramData%\Microsoft\Windows Defender\Support"
+        "%ProgramData%\USOShared\Logs"
+        "%SystemRoot%\Logs"
+        "%SystemRoot%\ServiceProfiles\LocalService\AppData\Local\FontCache"
+        "%SystemRoot%\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache"
+        "%SystemRoot%\System32\catroot2"
+        "%SystemRoot%\System32\LogFiles"
+        "%SystemRoot%\SystemTemp"
+        "%SystemRoot%\Temp"
+        "%USERPROFILE%\AppData\LocalLow\Intel"
+        "%USERPROFILE%\AppData\LocalLow\Microsoft\CryptnetUrlCache"
+        "%USERPROFILE%\Recent"
+        "%USERPROFILE%\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
+        "%LocalAppData%\Microsoft\TokenBroker"
+        "%LocalAppData%\Microsoft\OneAuth"
+        "%LocalAppData%\Microsoft\IdentityCache"
+        "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
+    ) do (
+        call :CleanDirectory "%%~D"
+    )
 
 rem 不要なディレクトリの削除
 echo [ファイルクリーンアップ] 不要なディレクトリを削除しています...
-rmdir /s /q "%SystemRoot%\SoftwareDistribution" >nul 2>&1
-rmdir /s /q "%SystemRoot%\Prefetch" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.aws" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.config" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.dbus-keyrings" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.dotnet" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.monica-code" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.nuget" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.omnisharp" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\.templateengine" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\Bootstrap Studio Backups" >nul 2>&1
-rmdir /s /q "%USERPROFILE%\intellij-chatgpt" >nul 2>&1
-rmdir /s /q "C:\$SysReset" >nul 2>&1
-rmdir /s /q "C:\AMD" >nul 2>&1
-rmdir /s /q "C:\Intel" >nul 2>&1
-rmdir /s /q "C:\log" >nul 2>&1
-rmdir /s /q "C:\OneDriveTemp" >nul 2>&1
-rmdir /s /q "C:\PerfLogs" >nul 2>&1
-rmdir /s /q "C:\SWSetup" >nul 2>&1
-rmdir /s /q "C:\Windows.old" >nul 2>&1
+for %%D in (
+    "%SystemRoot%\SoftwareDistribution"
+    "%SystemRoot%\Prefetch"
+    "%USERPROFILE%\.aws"
+    "%USERPROFILE%\.config"
+    "%USERPROFILE%\.dbus-keyrings"
+    "%USERPROFILE%\.dotnet"
+    "%USERPROFILE%\.monica-code"
+    "%USERPROFILE%\.nuget"
+    "%USERPROFILE%\.omnisharp"
+    "%USERPROFILE%\.templateengine"
+    "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache"
+    "%USERPROFILE%\Bootstrap Studio Backups"
+    "%USERPROFILE%\intellij-chatgpt"
+    "C:\$SysReset"
+    "C:\AMD"
+    "C:\Intel"
+    "C:\log"
+    "C:\OneDriveTemp"
+    "C:\PerfLogs"
+    "C:\SWSetup"
+    "C:\Windows.old"
+) do (
+    rmdir /s /q %%D >nul 2>&1
+)
 
 rem 特定のファイル削除
 echo [ファイルクリーンアップ] キャッシュファイルを削除しています...
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" >nul 2>&1
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" >nul 2>&1
-del /q /f "%LOCALAPPDATA%\IconCache.db" >nul 2>&1
-del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" >nul 2>&1
-del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" >nul 2>&1
-del /q /f "%WinDir%\System32\FNTCACHE.DAT" >nul 2>&1
-del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" >nul 2>&1
+for %%F in (
+    "%LOCALAPPDATA%\Microsoft\Outlook\*.nst"
+    "%LOCALAPPDATA%\Microsoft\Outlook\*.ost"
+    "%LOCALAPPDATA%\IconCache.db"
+    "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db"
+    "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db"
+    "%WinDir%\System32\FNTCACHE.DAT"
+    "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*"
+) do (
+    del /q /f %%F >nul 2>&1
+)
 
 rem ブラウザキャッシュのクリーンアップ
 echo [ファイルクリーンアップ] ブラウザキャッシュを削除しています...
