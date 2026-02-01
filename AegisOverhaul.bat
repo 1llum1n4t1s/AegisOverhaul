@@ -318,10 +318,10 @@ timeout /t 1 /nobreak >nul
 echo  - システムトレイアイコンをリセットしました
 
 echo [レジストリ最適化] Office/Teams/IdentityCRL ログイン情報を削除しています...
-reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\15.0" /f >nul 2>&1
-reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Common\Identity" /f >nul 2>&1
-reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\Teams" /f >nul 2>&1
-reg delete "HKEY_CURRENT_USER\Software\Microsoft\IdentityCRL" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Office\15.0" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Identity" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Office\Teams" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\IdentityCRL" /f >nul 2>&1
 rem カスタマーエクスペリエンス向上プログラム (CEIP) を無効化
 reg add "HKLM\SOFTWARE\Policies\Microsoft\SQMClient\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f >nul 2>&1
 rem フィードバックを求める通知を無効化
