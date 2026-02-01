@@ -26,9 +26,9 @@ rem 作業用サービス停止
 rem ===================================================
 echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
 taskkill /f /im explorer.exe >nul 2>&1
-taskkill /f /im Teams.exe 2>nul
-taskkill /f /im ms-teams.exe 2>nul
-taskkill /f /im msedge.exe 2>nul
+taskkill /f /im Teams.exe >nul 2>&1
+taskkill /f /im ms-teams.exe >nul 2>&1
+taskkill /f /im msedge.exe >nul 2>&1
 timeout /t 1 /nobreak >nul
 
 
@@ -73,7 +73,7 @@ echo  - MMAgentの設定を完了しました
 
 echo [サービス管理] サービスを停止しています...
 for %%S in (bits wuauserv usosvc FontCache SysMain wsearch) do (
-    net stop "%%S" 2>nul
+    net stop "%%S" >nul 2>&1
     echo  - %%S サービスを停止しました
 )
 
@@ -147,37 +147,37 @@ call :CleanDirectory "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
 
 rem 不要なディレクトリの削除
 echo [ファイルクリーンアップ] 不要なディレクトリを削除しています...
-rmdir /s /q "%SystemRoot%\SoftwareDistribution" 2>nul
-rmdir /s /q "%SystemRoot%\Prefetch" 2>nul
-rmdir /s /q "%USERPROFILE%\.aws" 2>nul
-rmdir /s /q "%USERPROFILE%\.config" 2>nul
-rmdir /s /q "%USERPROFILE%\.dbus-keyrings" 2>nul
-rmdir /s /q "%USERPROFILE%\.dotnet" 2>nul
-rmdir /s /q "%USERPROFILE%\.monica-code" 2>nul
-rmdir /s /q "%USERPROFILE%\.nuget" 2>nul
-rmdir /s /q "%USERPROFILE%\.omnisharp" 2>nul
-rmdir /s /q "%USERPROFILE%\.templateengine" 2>nul
-rmdir /s /q "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" 2>nul
-rmdir /s /q "%USERPROFILE%\Bootstrap Studio Backups" 2>nul
-rmdir /s /q "%USERPROFILE%\intellij-chatgpt" 2>nul
-rmdir /s /q "C:\$SysReset" 2>nul
-rmdir /s /q "C:\AMD" 2>nul
-rmdir /s /q "C:\Intel" 2>nul
-rmdir /s /q "C:\log" 2>nul
-rmdir /s /q "C:\OneDriveTemp" 2>nul
-rmdir /s /q "C:\PerfLogs" 2>nul
-rmdir /s /q "C:\SWSetup" 2>nul
-rmdir /s /q "C:\Windows.old" 2>nul
+rmdir /s /q "%SystemRoot%\SoftwareDistribution" >nul 2>&1
+rmdir /s /q "%SystemRoot%\Prefetch" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.aws" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.config" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.dbus-keyrings" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.dotnet" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.monica-code" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.nuget" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.omnisharp" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\.templateengine" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\Bootstrap Studio Backups" >nul 2>&1
+rmdir /s /q "%USERPROFILE%\intellij-chatgpt" >nul 2>&1
+rmdir /s /q "C:\$SysReset" >nul 2>&1
+rmdir /s /q "C:\AMD" >nul 2>&1
+rmdir /s /q "C:\Intel" >nul 2>&1
+rmdir /s /q "C:\log" >nul 2>&1
+rmdir /s /q "C:\OneDriveTemp" >nul 2>&1
+rmdir /s /q "C:\PerfLogs" >nul 2>&1
+rmdir /s /q "C:\SWSetup" >nul 2>&1
+rmdir /s /q "C:\Windows.old" >nul 2>&1
 
 rem 特定のファイル削除
 echo [ファイルクリーンアップ] キャッシュファイルを削除しています...
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" 2>nul
-del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" 2>nul
-del /q /f "%LOCALAPPDATA%\IconCache.db" 2>nul
-del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
-del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
-del /q /f "%WinDir%\System32\FNTCACHE.DAT" 2>nul
-del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" 2>nul
+del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.nst" >nul 2>&1
+del /q /f "%LOCALAPPDATA%\Microsoft\Outlook\*.ost" >nul 2>&1
+del /q /f "%LOCALAPPDATA%\IconCache.db" >nul 2>&1
+del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db" >nul 2>&1
+del /q /f "%LOCALAPPDATA%\Microsoft\Windows\Explorer\thumbcache_*.db" >nul 2>&1
+del /q /f "%WinDir%\System32\FNTCACHE.DAT" >nul 2>&1
+del /q /f "%APPDATA%\Cursor\User\globalStorage\state.vscdb.corrupted.*" >nul 2>&1
 
 rem ブラウザキャッシュのクリーンアップ
 echo [ファイルクリーンアップ] ブラウザキャッシュを削除しています...
@@ -404,11 +404,11 @@ defrag /C /L /B
 echo  - SSD TRIM コマンドを実行しました
 
 rem 時刻同期の設定と実行
-net stop w32time 2>nul
+net stop w32time >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\W32Time\Parameters" /v "NtpServer" /t REG_SZ /d "ntp.jst.mfeed.ad.jp" /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\W32Time\Parameters" /v "Type" /t REG_SZ /d "NTP" /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\W32Time\Config" /v "AnnounceFlags" /t REG_DWORD /d 5 /f
-net start w32time 2>nul
+net start w32time >nul 2>&1
 
 rem ===================================================
 rem ネットワーク最適化セクション
