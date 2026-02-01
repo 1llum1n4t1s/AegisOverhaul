@@ -27,7 +27,9 @@ rem ===================================================
 echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
 taskkill /f /im explorer.exe >nul 2>&1
 taskkill /f /im Teams.exe 2>nul
-timeout /t 3 /nobreak >nul
+taskkill /f /im ms-teams.exe 2>nul
+taskkill /f /im msedge.exe 2>nul
+timeout /t 1 /nobreak >nul
 
 
 rem ===================================================
