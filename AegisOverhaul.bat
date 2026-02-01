@@ -22,11 +22,13 @@ echo 管理者権限で実行されています。
 cd /d C:
 
 rem ===================================================
-rem エクスプローラー停止（操作ガード対策）
+rem 作業用サービス停止
 rem ===================================================
-echo [エクスプローラー停止] エクスプローラーのプロセスを停止しています...
+echo [作業用サービス停止] 作業用サービスのプロセスを停止しています...
 taskkill /f /im explorer.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
+taskkill /f /im Teams.exe 2>nul
+timeout /t 3 /nobreak >nul
+
 
 rem ===================================================
 rem アプリケーション更新セクション
@@ -139,7 +141,6 @@ rem Microsoftアカウントログインセッション情報
 call :CleanDirectory "%LocalAppData%\Microsoft\TokenBroker"
 call :CleanDirectory "%LocalAppData%\Microsoft\OneAuth"
 call :CleanDirectory "%LocalAppData%\Microsoft\IdentityCache"
-call :CleanDirectory "%LocalAppData%\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy"
 call :CleanDirectory "%LocalAppData%\Packages\MSTeams_8wekyb3d8bbwe"
 
 rem 不要なディレクトリの削除
@@ -314,6 +315,17 @@ reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Curr
 timeout /t 1 /nobreak >nul
 echo  - システムトレイアイコンをリセットしました
 
+echo [レジストリ最適化] Office/Teams/IdentityCRL ログイン情報を削除しています...
+reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\15.0" /f >nul 2>&1
+reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Common\Identity" /f >nul 2>&1
+reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\Teams" /f >nul 2>&1
+reg delete "HKEY_CURRENT_USER\Software\Microsoft\IdentityCRL" /f >nul 2>&1
+rem カスタマーエクスペリエンス向上プログラム (CEIP) を無効化
+reg add "HKLM\SOFTWARE\Policies\Microsoft\SQMClient\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f >nul 2>&1
+rem フィードバックを求める通知を無効化
+reg add "HKCU\Software\Microsoft\Siuf\Rules" /v "NumberOfSIUFInPeriod" /t REG_DWORD /d 0 /f >nul 2>&1
+echo  - Office/Teams/IdentityCRL/CEIP/Feedback の設定を完了しました
+
 echo [システム最適化] 固定キー機能を無効化しています...
 reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "506" /f >nul 2>&1
 reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v "Flags" /t REG_SZ /d "58" /f >nul 2>&1
@@ -473,11 +485,10 @@ WSReset.exe
 echo  - Microsoft Store のキャッシュをクリアしました
 
 echo.
-echo すべてのリセット処理が完了しました。
-echo 一部の設定は再起動後に完全に反映されます。
-echo.
-echo [再起動] システムを再起動しています...
-shutdown /r /f /t 0
+rem echo すべてのリセット処理が完了しました。
+rem echo 一部の設定は再起動後に完全に反映されます。
+rem echo [再起動] システムを再起動しています...
+rem shutdown /r /f /t 0
 
 endlocal
 exit /b
