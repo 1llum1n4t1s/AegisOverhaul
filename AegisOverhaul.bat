@@ -385,6 +385,13 @@ rem バッテリー駆動時：電源ボタンでシャットダウン
 powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 3
 rem バッテリー駆動時：カバーを閉じるとスリープ
 powercfg /setdcvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
+rem [電源設定] AHCI/NVMe Link Power Management (HIPM/DIPM) をActive（切断なし）に固定
+rem 0: Active (省電力なし), 1: HIPM, 2: DIPM, 3: Both
+powercfg /setacvalueindex SCHEME_CURRENT SUB_DISK 0b2d69d7-a2a1-449c-9680-f91c70521c60 0
+powercfg /setdcvalueindex SCHEME_CURRENT SUB_DISK 0b2d69d7-a2a1-449c-9680-f91c70521c60 0
+rem [電源設定] ディスクの自動停止を無効化（0秒に設定）
+powercfg /change disk-timeout-ac 0
+powercfg /change disk-timeout-dc 0
 rem 設定を適用
 powercfg /setactive SCHEME_CURRENT
 
