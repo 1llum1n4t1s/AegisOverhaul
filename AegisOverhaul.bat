@@ -451,26 +451,14 @@ ipconfig /renew6
 echo [ネットワーク最適化] TCP設定を最適化しています...
 netsh int tcp set global rsc=enabled
 netsh int tcp set global ecncapability=enabled
-netsh int tcp set global timestamps=disabled
+netsh int tcp set global timestamps=enabled
 netsh int tcp set global rss=enabled
 netsh int tcp set global fastopen=enabled
-netsh int tcp set supplemental template=Internet congestionprovider=BBR2
-netsh int tcp set supplemental template=InternetCustom congestionprovider=BBR2
-netsh int tcp set supplemental template=Datacenter congestionprovider=BBR2
-netsh int tcp set supplemental template=DatacenterCustom congestionprovider=BBR2
-netsh int tcp set supplemental template=Compat congestionprovider=BBR2
-netsh int ipv6 set global loopbacklargemtu=disable
-netsh int ipv4 set global loopbacklargemtu=disable
 echo  - TCP設定を最適化しました
 
 rem ===================================================
 rem エクスプローラー設定セクション（エクスプローラー停止中に実行）
 rem ===================================================
-echo [エクスプローラー] フォルダビュー設定キャッシュをクリアしています...
-reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
-reg delete "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
-echo  - フォルダビュー設定キャッシュをクリアしました
-
 echo [エクスプローラー] フォルダテンプレートを汎用に固定しています...
 reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f >nul 2>&1
 echo  - すべてのフォルダをGeneral Items（汎用）に統一しました
